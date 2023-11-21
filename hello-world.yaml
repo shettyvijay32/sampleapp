@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tgp-cachequeue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tgp-cachequeue
+  template:
+    metadata:
+      labels:
+        app: tgp-cachequeue
+    spec:
+      containers:
+      - image: 378339051275.dkr.ecr.ap-south-1.amazonaws.com/tgp-cachequeue:tgp-cachequeue-3d3cba2f
+        name: tgp-cachequeue
+        ports:
+        - containerPort: 8085
+        env:   # Setting Environmental Variable
+          - name: SERVER_PORT  
+            value: "8085"
+          - name: REDIS_CLUSTER 
+            value: "Y"
+          - name: REDIS_USERNAME 
+            value: NA
+          - name: REDIS_PASSWORD 
+            value: NA
+            
+          - name: AUTH_URL 
+            value: http://auth.dev.api.goodplatform.co
+            
+          - name: REDIS_HOST 
+            valueFrom:
+              configMapKeyRef:
+                name: dev-config
+                key: REDIS_HOST
+          - name: REDIS_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: dev-config
+                key: REDIS_PORT
+          - name: KAFKA_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: dev-config
+                key: KAFKA_HOST
+          - name: KAFKA_GROUPID
+            valueFrom:
+              configMapKeyRef:
+                name: dev-config
+                key: KAFKA_GROUPID
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: kafka-secret
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: kafka-secret
+                key: AWS_SECRET_KEY
+          
+           
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tgp-cachequeue   
+spec:
+  ports:
+  - port: 80
+    targetPort: 8085
+    name: http-port  # Follows the naming convention
+    protocol: TCP
+  selector:
+    app: tgp-cachequeue
+  type: ClusterIP
